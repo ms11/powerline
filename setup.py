@@ -25,6 +25,8 @@ setup(
 	url='https://github.com/Lokaltog/powerline',
 	scripts=[
 		'scripts/powerline',
+		'scripts/powerline-server',
+		'scripts/powerline-shell',
 		],
 	keywords='',
 	packages=find_packages(exclude=('tests',)),

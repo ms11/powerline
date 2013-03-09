@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+
+import argparse
+import asyncore
+import os
+import socket
+
+from powerline.shell import ShellPowerline, get_argparser
+
+address = '\0powerline-ipc-{0:d}'.format(os.getuid())
+
+
+class InteractiveArgParser(argparse.ArgumentParser):
+	def print_usage(self, file=None):
+		raise Exception(self.format_usage())
+
+	def print_help(self, file=None):
+		raise Exception(self.format_help())
+
+	def exit(self, status=0, message=None):
+		pass
+
+	def error(self, message):
+		raise Exception(self.format_usage())
+
+argparser = get_argparser(parser=InteractiveArgParser)
+
+
+class PowerlineHandler(asyncore.dispatcher_with_send):
+	def handle_read(self):
+		data = self.recv(8192)
+		if data:
+			try:
+				args = argparser.parse_args(data.decode('utf-8').split())
+				powerline = ShellPowerline(args)
+				rendered = powerline.renderer.render(width=args.width, side=args.side)
+				self.send(rendered.encode('utf-8'))
+			except Exception as e:
+				self.send(str(e))
+		self.close()
+
+
+class PowerlineServer(asyncore.dispatcher):
+	def __init__(self, address):
+		asyncore.dispatcher.__init__(self)
+		self.create_socket(socket.AF_UNIX, socket.SOCK_STREAM)
+		self.set_reuse_addr()
+		self.bind(address)
+		self.listen(5)
+
+	def handle_accept(self):
+		sock = self.accept()
+		if sock is not None:
+			PowerlineHandler(sock[0])
+
+if __name__ == '__main__':
+	server = PowerlineServer(address)
+	asyncore.loop()

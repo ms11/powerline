@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+'''Powerline prompt and statusline script.'''
+
+import sys
+
+from powerline.shell import ShellPowerline, get_argparser
+
+if __name__ == '__main__':
+	args = get_argparser().parse_args()
+	powerline = ShellPowerline(args)
+	rendered = powerline.renderer.render(width=args.width, side=args.side)
+	try:
+		sys.stdout.write(rendered)
+	except UnicodeEncodeError:
+		sys.stdout.write(rendered.encode('utf-8'))
